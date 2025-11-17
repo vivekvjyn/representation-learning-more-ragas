@@ -1,1 +1,5 @@
 dataset/
+checkpoints/
+runs/
+model/__pycache__/
+modules/__pycache__/

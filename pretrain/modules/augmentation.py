@@ -5,26 +5,26 @@ from tsaug import Drift, Resize, TimeWarp
 
 def augment(batch: torch.Tensor):
     augmented_batch = []
-    for sample in batch.numpy():
-        augmented_sample = _perturb(sample)
-        augmented_batch.append(augmented_sample)
+    for sample in batch.cpu().numpy():
+        augmented_sample = _perturb(sample[0])
+        augmented_batch.append([augmented_sample])
 
-    max_length = max(len(sample) for sample in augmented_batch)
+    max_length = max(len(sample[0]) for sample in augmented_batch)
     padded_batch = []
     for sample in augmented_batch:
         padded_sample = np.pad(
-            sample,
-            (0, max_length - len(sample)),
+            sample[0],
+            (0, max_length - len(sample[0])),
             mode="constant",
             constant_values=0,
         )
-        padded_batch.append(padded_sample)
+        padded_batch.append([padded_sample])
 
-    return torch.tensor(padded_batch, dtype=torch.float32)
+    return torch.tensor(padded_batch, dtype=torch.float32).to(batch.device)
 
 
 def _get_bounds(sample):
-    idx = np.where(~np.isnan(np.array(ts)))[0]
+    idx = np.where(~np.isnan(np.array(sample)))[0]
 
     start_idx = min(idx) if len(idx) else 0
     end_idx = max(idx) if len(idx) else 0
@@ -32,7 +32,7 @@ def _get_bounds(sample):
     return start_idx, end_idx
 
 
-def _perturb(sample, n_speed_change=4, max_drift=0.01, proportion=0.1):
+def _perturb(sample, n_speed_change=5, max_drift=0.02, proportion=0.1):
     start_idx, end_idx = _get_bounds(sample)
 
     start_silence = np.array(sample[:start_idx])
@@ -42,7 +42,6 @@ def _perturb(sample, n_speed_change=4, max_drift=0.01, proportion=0.1):
     if len(values) > 4:
         values = TimeWarp(n_speed_change=n_speed_change).augment(values)
         values = Drift(max_drift=max_drift).augment(values)
-
     values = Resize(
         max(
             1,

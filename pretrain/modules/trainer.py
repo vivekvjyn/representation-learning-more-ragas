@@ -1,5 +1,6 @@
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -13,6 +14,7 @@ class Trainer:
     def __init__(self, model, logger):
         self.model = model
         self.logger = logger
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def __call__(
         self,
@@ -51,11 +53,12 @@ class Trainer:
         total_loss = 0.0
 
         for i, (batch) in enumerate(data_loader):
+            batch = batch.to(self.device)
             self.logger.pbar(i + 1, len(data_loader))
 
             batch_anchor = batch.clone()
-            batch_positive = augment(batch.clone())
-            batch_negative = derangement(torch.tensor(batch))
+            batch_positive = augment(batch)
+            batch_negative = derangement(batch)
 
             projection_anchor = self.model(batch_anchor)
             projection_positive = self.model(batch_positive)

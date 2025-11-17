@@ -75,7 +75,7 @@ class Encoder(nn.Module):
 class InceptionTime(nn.Module):
     def __init__(
         self,
-        embed_dim=32,
+        embed_dim=30,
         num_features=1,
     ):
         super().__init__()
@@ -91,8 +91,8 @@ class InceptionTime(nn.Module):
         )
 
     def forward(self, input):
-        embedding = self.encoder(input)
-        return self.fully_connected(embedding)
+        embedding, hidden = self.encoder(input)
+        return self.fully_connected(embedding.mean(dim=1))
 
     def save(self):
         os.makedirs(self.dir, exist_ok=True)
