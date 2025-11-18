@@ -42,7 +42,7 @@ class Augmenter:
         return np.concatenate([start_silence, values, end_silence])
 
     def _get_bounds(self, sample: np.ndarray):
-        idx = np.where(~np.isnan(np.array(sample)))[0]
+        idx = np.where((~np.isnan(sample)) & (sample != -4200))[0]
 
         start_idx = min(idx) if len(idx) else 0
         end_idx = max(idx) if len(idx) else 0
