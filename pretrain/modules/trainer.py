@@ -1,20 +1,17 @@
 import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.nn.functional as F
-
-from modules.augmentation import augment
-from modules.logger import Logger
-from modules.utils import derangement
-
+from info_nce import InfoNCE
 
 class Trainer:
-    def __init__(self, model, logger):
+    def __init__(self, model, augmenter, deranger, logger, device):
         self.model = model
+        self.augmenter = augmenter
+        self.deranger = deranger
+
         self.logger = logger
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device
 
     def __call__(
         self,
@@ -50,27 +47,18 @@ class Trainer:
     def _propagate(self, data_loader, optimizer, back_prop):
         self.model.train() if back_prop else self.model.eval()
 
+        loss_fn = InfoNCE()
         total_loss = 0.0
 
         for i, (batch) in enumerate(data_loader):
             batch = batch.to(self.device)
             self.logger.pbar(i + 1, len(data_loader))
 
-            batch_anchor = batch.clone()
-            batch_positive = augment(batch)
-            batch_negative = derangement(batch)
+            query = self.model(batch)
+            positive_key = self.model(self.augmenter(batch))
+            negative_keys = self.model(self.deranger(batch))
 
-            projection_anchor = self.model(batch_anchor)
-            projection_positive = self.model(batch_positive)
-            projection_negative = self.model(batch_negative)
-
-            loss = F.triplet_margin_loss(
-                projection_anchor,
-                projection_positive,
-                projection_negative,
-                margin=1.0,
-                p=2,
-            )
+            loss = loss_fn(query, positive_key, negative_keys)
 
             if back_prop:
                 optimizer.zero_grad()

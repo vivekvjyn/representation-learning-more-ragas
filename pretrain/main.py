@@ -1,15 +1,13 @@
 import pickle
-
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from model.model import InceptionTime
-from modules.logger import Logger
-from modules.trainer import Trainer
+from pretrain import InceptionTime, Trainer, Logger, Augmenter, Deranger
 
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logger = Logger()
-
 
 class SequenceDataset(torch.utils.data.Dataset):
     def __init__(self, data):
@@ -25,13 +23,20 @@ class SequenceDataset(torch.utils.data.Dataset):
 
 
 def main():
-    with open("dataset/demod.pkl", "rb") as f:
-        data = pickle.load(f)
+    with open("pretrain/dataset/cmr.pkl", "rb") as f:
+        dataset = pickle.load(f)
 
-    # pad data to max length
-    max_length = max(len(s) for s in data)
+    max_length = max(len(sample) for sample in dataset)
     padded = np.array(
-        [np.pad(s, (0, max_length - len(s)), mode="constant") for s in data]
+        [
+            np.pad(
+                sample,
+                (0, max_length - len(sample)),
+                mode="constant",
+                constant_values=0,
+            )
+            for sample in dataset
+        ]
     )
 
     split = int(0.8 * len(padded))
@@ -49,7 +54,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = InceptionTime().to(device)
 
-    trainer = Trainer(model, logger)
+    trainer = Trainer(model, Augmenter(), Deranger(), logger, device)
 
     trainer(
         train_loader,

@@ -8,6 +8,7 @@ class Logger:
         self.pbar_active = False
 
         self.dir = os.path.join(
+            "pretrain",
             "runs",
             f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
         )

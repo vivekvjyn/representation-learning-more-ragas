@@ -79,7 +79,7 @@ class InceptionTime(nn.Module):
         num_features=1,
     ):
         super().__init__()
-        self.dir = "checkpoints"
+        self.dir = os.path.join("pretrain", "checkpoints")
         self.filename = "encoder.pth"
 
         self.encoder = Encoder(num_features, embed_dim)
