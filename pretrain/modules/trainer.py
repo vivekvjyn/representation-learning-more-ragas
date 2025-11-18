@@ -15,8 +15,7 @@ class Trainer:
 
     def __call__(
         self,
-        train_loader,
-        val_loader,
+        data_loader,
         epochs,
         lr=1e-3,
         weight_decay=1e-3,
@@ -30,15 +29,11 @@ class Trainer:
         for epoch in range(epochs):
             self.logger(f"Epoch {epoch + 1}/{epochs}:")
 
-            train_loss = self._propagate(train_loader, optimizer, back_prop=True)
-            self.logger(f"\tTrain Loss: {train_loss:.4f}")
+            loss = self._propagate(data_loader, optimizer, back_prop=True)
+            self.logger(f"\tTrain Loss: {loss:.4f}")
 
-            with torch.no_grad():
-                val_loss = self._propagate(val_loader, optimizer, back_prop=False)
-            self.logger(f"\tValidation Loss: {val_loss:.4f}")
-
-            if val_loss < min_loss:
-                min_loss = val_loss
+            if loss < min_loss:
+                min_loss = loss
                 self.model.save()
                 self.logger(
                     f"Model saved to {os.path.join(self.model.dir, 'model.pth')}"

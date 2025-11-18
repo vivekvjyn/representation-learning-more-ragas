@@ -40,16 +40,13 @@ def main():
     )
 
     split = int(0.8 * len(padded))
-    train_data = padded[:split]
-    val_data = padded[split:]
+    data = padded[:split]
 
-    train_dataset = SequenceDataset(train_data)
-    val_dataset = SequenceDataset(val_data)
+    dataset = SequenceDataset(data)
 
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=32, shuffle=True
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=32, shuffle=True
     )
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = InceptionTime().to(device)
@@ -57,8 +54,7 @@ def main():
     trainer = Trainer(model, Augmenter(), Deranger(), logger, device)
 
     trainer(
-        train_loader,
-        val_loader,
+        data_loader,
         epochs=50,
         lr=1e-3,
         weight_decay=1e-3,
