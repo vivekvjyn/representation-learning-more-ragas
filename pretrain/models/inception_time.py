@@ -1,5 +1,4 @@
 import os
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -28,44 +27,38 @@ class InceptionModule(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, num_features, embed_dim):
+    def __init__(self, num_features, embed_dim, depth=6):
         super().__init__()
-        self.inception1 = InceptionModule(num_features, embed_dim * 16)
-        self.inception2 = InceptionModule(embed_dim * 16, embed_dim * 8)
-        self.inception3 = InceptionModule(embed_dim * 8, embed_dim * 4)
-        self.inception4 = InceptionModule(embed_dim * 4, embed_dim * 2)
-        self.inception5 = InceptionModule(embed_dim * 2, embed_dim)
 
-        self.gru = nn.GRU(embed_dim, embed_dim, 1, batch_first=True)
-        self.pooling = nn.AvgPool1d(kernel_size=2, stride=2)
-        self.bcnorm1 = nn.BatchNorm1d(embed_dim * 16)
-        self.bcnorm2 = nn.BatchNorm1d(embed_dim * 8)
-        self.bcnorm3 = nn.BatchNorm1d(embed_dim * 4)
-        self.bcnorm4 = nn.BatchNorm1d(embed_dim * 2)
-        self.bcnorm5 = nn.BatchNorm1d(embed_dim)
+        self.blocks = nn.ModuleList()
+
+        self.blocls.append(
+            nn.Seqential(
+                InceptionModule(num_features, embed_dim * 2 ** (depth - 1)),
+                nn.ReLU(),
+                nn.BatchNorm1d(embed_dim * embed_dim * 2 ** (depth - 1)),
+                nn.AvgPool1d(kernel_size=2, stride=2),
+            )
+        )
+
+        for i in range(depth - 1, 1, -1):
+            self.blocks.append(
+                nn.Sequential(
+                    InceptionModule(embed_dim * 2 ** i, embed_dim * 2 ** (i - 1)),
+                    nn.ReLU(),
+                    nn.BatchNorm1d(embed_dim * embed_dim * 2 ** (i - 1)),
+                    nn.AvgPool1d(kernel_size=2, stride=2),
+                )
+            )
+
+        self.blocks.append(nn.InceptionModule(embed_dim * 2, embed_dim))
+
+        self.gru = nn.GRU(embed_dim, embed_dim, batch_first=True)
+
 
     def forward(self, x):
-        x = self.inception1(x)
-        x = F.relu(x)
-        x = self.bcnorm1(x)
-        x = self.pooling(x)
-
-        x = self.inception2(x)
-        x = F.relu(x)
-        x = self.bcnorm2(x)
-        x = self.pooling(x)
-
-        x = self.inception3(x)
-        x = F.relu(x)
-        x = self.bcnorm3(x)
-        x = self.pooling(x)
-
-        x = self.inception4(x)
-        x = F.relu(x)
-        x = self.bcnorm4(x)
-        x = self.pooling(x)
-
-        x = self.inception5(x)
+        for block in self.blocks:
+            x = block(x)
 
         x, hidden = self.gru(x.permute(0, 2, 1))
 

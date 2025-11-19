@@ -4,9 +4,10 @@ from tsaug import Drift, Resize, TimeWarp
 
 
 class Augmenter:
-    def __init__(self, n_speed_change=5, max_drift=0.02, proportion=0.1):
-        self.n_speed_change = n_speed_change
-        self.max_drift = max_drift
+    def __init__(self, n_speed_change=5, max_speed_ratio=3, max_drift=0.02, n_drift_points=5, proportion=0.1):
+        self.time_warp = TimeWarp(n_speed_change=n_speed_change, max_speed_ratio=max_speed_ratio)
+        self.drift = Drift(max_drift=max_drift)
+        self.resize = Resize()
         self.proportion = proportion
 
     def __call__(self, batch: torch.Tensor):
@@ -34,10 +35,10 @@ class Augmenter:
         end_silence = np.array(sample[end_idx:])
 
         if len(values) > 4:
-            values = TimeWarp(n_speed_change=self.n_speed_change).augment(values)
-            values = Drift(max_drift=self.max_drift).augment(values)
+            values = self.time_warp.augment(values)
+            values = self.drift.augment(values)
 
-        values = Resize(max(1,int(round(len(values) * np.random.uniform(1 - self.proportion, 1 + self.proportion))),)).augment(values)
+        values = Resize(max(1, int(round(len(values) * np.random.uniform(1 - self.proportion, 1 + self.proportion))),)).augment(values)
 
         return np.concatenate([start_silence, values, end_silence])
 

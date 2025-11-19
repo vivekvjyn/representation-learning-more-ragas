@@ -50,23 +50,20 @@ class Trainer:
 
             query_pitch = batch.clone()
             query_silence_mask = (torch.isnan(query_pitch) | (query_pitch == 0)).float()
-            query_padding_mask = (query_pitch == -4200)
-            query_pitch = torch.nan_to_num(query_pitch, nan=-4200)
-            query_input = torch.cat([query_pitch, query_silence_mask, query_padding_mask], dim=1)
+            query_pitch = torch.nan_to_num(query_pitch, nan=-1)
+            query_input = torch.cat([query_pitch, query_silence_mask], dim=1)
             query = self.model(query_input)
 
             positive_pitch = self.augmenter(batch)
             positive_silence_mask = (torch.isnan(positive_pitch) | (positive_pitch == 0)).float()
-            positive_padding_mask = (positive_pitch == -4200)
-            positive_pitch = torch.nan_to_num(positive_pitch, nan=-4200)
-            positive_input = torch.cat([positive_pitch, positive_silence_mask, positive_padding_mask], dim=1)
+            positive_pitch = torch.nan_to_num(positive_pitch, nan=-1)
+            positive_input = torch.cat([positive_pitch, positive_silence_mask], dim=1)
             positive_key = self.model(positive_input)
 
             negative_pitch, permutation = self.deranger(batch)
             negative_silence_mask = query_silence_mask[permutation]
-            negative_padding_mask = query_padding_mask[permutation]
-            negative_pitch = torch.nan_to_num(negative_pitch, nan=-4200)
-            negative_input = torch.cat([negative_pitch, negative_silence_mask, negative_padding_mask], dim=1)
+            negative_pitch = torch.nan_to_num(negative_pitch, nan=-1)
+            negative_input = torch.cat([negative_pitch, negative_silence_mask], dim=1)
             negative_keys = self.model(negative_input)
 
             loss = loss_fn(query, positive_key, negative_keys)

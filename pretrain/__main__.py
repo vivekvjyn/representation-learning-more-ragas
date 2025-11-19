@@ -13,7 +13,7 @@ def main():
         dataset = pickle.load(f)
 
     max_length = max(len(sample) for sample in dataset)
-    padded = np.array([np.pad(sample,(0, max_length - len(sample)), mode="constant", constant_values=-4200,) for sample in dataset])
+    padded = np.array([np.pad(sample,(0, max_length - len(sample)), mode="constant", constant_values=0,) for sample in dataset])
 
     dataset = Dataset(padded)
 
@@ -22,7 +22,7 @@ def main():
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = InceptionTime(num_features=3).to(device)
+    model = InceptionTime(num_features=2).to(device)
 
     trainer = Trainer(model, Augmenter(), Deranger(), logger, device)
 
