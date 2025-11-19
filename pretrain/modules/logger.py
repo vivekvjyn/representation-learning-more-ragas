@@ -7,10 +7,7 @@ class Logger:
         self.width = width
         self.pbar_active = False
 
-        self.dir = os.path.join(
-            "runs",
-            f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-        )
+        self.dir = os.path.join("runs", f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
         os.makedirs(self.dir, exist_ok=True)
 
         if os.path.exists(os.path.join(self.dir, "log.txt")):
@@ -31,13 +28,8 @@ class Logger:
                 self._carriage_return()
                 print("\r", end="")
 
-            f.write(
-                f"|{'=' * int(self.width * progress / total)}{' ' * (self.width - int(self.width * progress / total))}|"
-            )
-            print(
-                f"|{'=' * int(self.width * progress / total)}{' ' * (self.width - int(self.width * progress / total))}|",
-                end="",
-            )
+            f.write(f"|{'=' * int(self.width * progress / total)}{' ' * (self.width - int(self.width * progress / total))}|")
+            print(f"|{'=' * int(self.width * progress / total)}{' ' * (self.width - int(self.width * progress / total))}|", end="")
 
             if progress == total:
                 self.pbar_active = False

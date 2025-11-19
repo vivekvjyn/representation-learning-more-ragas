@@ -8,7 +8,6 @@ class Trainer:
         self.model = model
         self.augmenter = augmenter
         self.deranger = deranger
-
         self.logger = logger
         self.device = device
 
