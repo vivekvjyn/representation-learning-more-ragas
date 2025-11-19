@@ -7,7 +7,6 @@ class Augmenter:
     def __init__(self, n_speed_change=5, max_speed_ratio=3, max_drift=0.02, n_drift_points=5, proportion=0.1):
         self.time_warp = TimeWarp(n_speed_change=n_speed_change, max_speed_ratio=max_speed_ratio)
         self.drift = Drift(max_drift=max_drift)
-        self.resize = Resize()
         self.proportion = proportion
 
     def __call__(self, batch: torch.Tensor):

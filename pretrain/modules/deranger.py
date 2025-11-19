@@ -3,7 +3,7 @@ from fastdtw import fastdtw
 
 
 class Deranger:
-    def __init__(self, min_distance=200):
+    def __init__(self, min_distance=0.04):
         self.min_distance = min_distance
 
     def __call__(self, query: torch.Tensor):
@@ -17,8 +17,8 @@ class Deranger:
                 return negative_keys, permutation
 
     def _has_false_negatives(self, query: torch.Tensor, negative_keys: torch.Tensor):
-        x = torch.nan_to_num(query, nan=-4200)
-        y = torch.nan_to_num(negative_keys, nan=-4200)
+        x = torch.nan_to_num(query, nan=0)
+        y = torch.nan_to_num(negative_keys, nan=0)
         for i in range(len(query)):
 
             distance, path = fastdtw(x[i][0].cpu().numpy(), y[i][0].cpu().numpy())

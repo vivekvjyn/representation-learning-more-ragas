@@ -27,16 +27,16 @@ class InceptionModule(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, num_features, embed_dim, depth=6):
+    def __init__(self, num_features, embed_dim, depth):
         super().__init__()
 
         self.blocks = nn.ModuleList()
 
-        self.blocls.append(
-            nn.Seqential(
+        self.blocks.append(
+            nn.Sequential(
                 InceptionModule(num_features, embed_dim * 2 ** (depth - 1)),
                 nn.ReLU(),
-                nn.BatchNorm1d(embed_dim * embed_dim * 2 ** (depth - 1)),
+                nn.BatchNorm1d(embed_dim * 2 ** (depth - 1)),
                 nn.AvgPool1d(kernel_size=2, stride=2),
             )
         )
@@ -46,12 +46,12 @@ class Encoder(nn.Module):
                 nn.Sequential(
                     InceptionModule(embed_dim * 2 ** i, embed_dim * 2 ** (i - 1)),
                     nn.ReLU(),
-                    nn.BatchNorm1d(embed_dim * embed_dim * 2 ** (i - 1)),
+                    nn.BatchNorm1d(embed_dim * 2 ** (i - 1)),
                     nn.AvgPool1d(kernel_size=2, stride=2),
                 )
             )
 
-        self.blocks.append(nn.InceptionModule(embed_dim * 2, embed_dim))
+        self.blocks.append(InceptionModule(embed_dim * 2, embed_dim))
 
         self.gru = nn.GRU(embed_dim, embed_dim, batch_first=True)
 
@@ -67,15 +67,13 @@ class Encoder(nn.Module):
 
 class InceptionTime(nn.Module):
     def __init__(
-        self,
-        embed_dim=30,
-        num_features=1,
+        self, embed_dim=30, num_features=1, depth=6
     ):
         super().__init__()
         self.dir = os.path.join("pretrain", "checkpoints")
         self.filename = "encoder.pth"
 
-        self.encoder = Encoder(num_features, embed_dim)
+        self.encoder = Encoder(num_features, embed_dim, depth)
 
         self.fully_connected = nn.Sequential(
             nn.Linear(embed_dim, embed_dim),
