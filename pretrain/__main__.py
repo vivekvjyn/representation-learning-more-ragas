@@ -23,11 +23,11 @@ def main():
 
 def parse_args():
     parser = argparse.ArgumentParser(description="representation learning for carnatic music transcription")
-    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--batch-size', type=int, default=512)
     parser.add_argument('--embed-dim', type=int, default=30)
     parser.add_argument('--out-dim', type=int, default=16)
     parser.add_argument('--depth', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--weight-decay', type=float, default=1e-3)
     args = parser.parse_args()
