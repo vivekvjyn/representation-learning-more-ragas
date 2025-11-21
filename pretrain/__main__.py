@@ -1,33 +1,37 @@
+import argparse
 import pickle
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
 
-from pretrain import InceptionTime, Trainer, Logger, Augmenter, Deranger, Dataset
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-logger = Logger()
+from pretrain import InceptionTime, Trainer, Logger, Augmenter, Dataset, normalize, zero_pad
 
 def main():
-    with open("pretrain/dataset/cmr.pkl", "rb") as f:
-        dataset = Dataset(pickle.load(f))
-
-    data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=32, shuffle=True
-    )
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = InceptionTime(num_features=2, depth=4).to(device)
+    logger = Logger()
+    augmenter = Augmenter()
+    args = parse_args()
 
-    trainer = Trainer(model, Augmenter(), Deranger(), logger, device)
+    with open("pretrain/dataset/cmr.pkl", "rb") as f:
+        data = pickle.load(f)
+    normalized_data = normalize(data)
+    padded_data = zero_pad(normalized_data)
 
-    trainer(
-        data_loader,
-        epochs=50,
-        lr=1e-3,
-        weight_decay=1e-3,
-    )
+    data_loader = torch.utils.data.DataLoader(Dataset(padded_data), batch_size=args.batch_size, shuffle=True)
+    model = InceptionTime(embed_dim=args.embed_dim, out_dim=args.out_dim, depth=args.depth).to(device)
+    trainer = Trainer(model, augmenter, logger, device)
 
+    trainer(data_loader, epochs=args.epochs, lr=args.lr, weight_decay=args.weight_decay)
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="representation learning for carnatic music transcription")
+    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--embed-dim', type=int, default=30)
+    parser.add_argument('--out-dim', type=int, default=16)
+    parser.add_argument('--depth', type=int, default=5)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--weight-decay', type=float, default=1e-3)
+    args = parser.parse_args()
+    return args
 
 if __name__ == "__main__":
     main()

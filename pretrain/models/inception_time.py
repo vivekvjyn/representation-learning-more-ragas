@@ -27,7 +27,7 @@ class InceptionModule(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, num_features, embed_dim, depth):
+    def __init__(self, embed_dim, depth, num_features):
         super().__init__()
 
         self.blocks = nn.ModuleList()
@@ -67,18 +67,18 @@ class Encoder(nn.Module):
 
 class InceptionTime(nn.Module):
     def __init__(
-        self, embed_dim=30, num_features=1, depth=6
+        self, embed_dim, out_dim, depth, num_features=2
     ):
         super().__init__()
-        self.dir = os.path.join("pretrain", "checkpoints")
+        self.dir = os.path.join("checkpoints")
         self.filename = "encoder.pth"
 
-        self.encoder = Encoder(num_features, embed_dim, depth)
+        self.encoder = Encoder(embed_dim, depth, num_features)
 
         self.fully_connected = nn.Sequential(
             nn.Linear(embed_dim, embed_dim),
             nn.ReLU(),
-            nn.Linear(embed_dim, 8),
+            nn.Linear(embed_dim, out_dim),
         )
 
     def forward(self, input):

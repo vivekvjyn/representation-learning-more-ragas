@@ -4,24 +4,14 @@ import torch
 from info_nce import InfoNCE
 
 class Trainer:
-    def __init__(self, model, augmenter, deranger, logger, device):
+    def __init__(self, model, augmenter, logger, device):
         self.model = model
         self.augmenter = augmenter
-        self.deranger = deranger
         self.logger = logger
         self.device = device
 
-    def __call__(
-        self,
-        data_loader,
-        epochs,
-        lr=1e-3,
-        weight_decay=1e-3,
-    ):
-        optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=lr, weight_decay=weight_decay
-        )
-
+    def __call__(self, data_loader, epochs, lr, weight_decay):
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         min_loss = np.inf
 
         for epoch in range(epochs):
@@ -48,24 +38,12 @@ class Trainer:
             self.logger.pbar(i + 1, len(data_loader))
 
             query_pitch = batch.clone()
-            query_silence_mask = (torch.isnan(query_pitch)).float()
-            query_pitch = torch.nan_to_num(query_pitch, nan=0)
-            query_input = torch.cat([query_pitch, query_silence_mask], dim=1)
-            query = self.model(query_input)
+            query = self._project(query_pitch)
 
             positive_pitch = self.augmenter(batch)
-            positive_silence_mask = (torch.isnan(positive_pitch)).float()
-            positive_pitch = torch.nan_to_num(positive_pitch, nan=0)
-            positive_input = torch.cat([positive_pitch, positive_silence_mask], dim=1)
-            positive_key = self.model(positive_input)
+            positive_key = self._project(positive_pitch)
 
-            negative_pitch, permutation = self.deranger(batch)
-            negative_silence_mask = query_silence_mask[permutation]
-            negative_pitch = torch.nan_to_num(negative_pitch, nan=0)
-            negative_input = torch.cat([negative_pitch, negative_silence_mask], dim=1)
-            negative_keys = self.model(negative_input)
-
-            loss = loss_fn(query, positive_key, negative_keys)
+            loss = loss_fn(query, positive_key)
 
             if back_prop:
                 optimizer.zero_grad()
@@ -75,3 +53,10 @@ class Trainer:
             total_loss += loss.item()
 
         return total_loss / len(data_loader)
+
+    def _project(self, pitch):
+        silence_mask = (torch.isnan(pitch)).float()
+        pitch = torch.nan_to_num(pitch, nan=0)
+        input = torch.cat([pitch, silence_mask], dim=1)
+
+        return self.model(input)
