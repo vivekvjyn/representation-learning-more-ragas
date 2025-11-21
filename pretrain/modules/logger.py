@@ -1,7 +1,6 @@
 import datetime
 import os
 
-
 class Logger:
     def __init__(self, width=100):
         self.width = width
